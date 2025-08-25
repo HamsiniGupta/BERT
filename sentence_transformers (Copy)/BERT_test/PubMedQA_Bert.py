@@ -24,14 +24,13 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Debug: verify they're loaded (remove this after testing)
 print(f"HF Token loaded: {bool(os.getenv('HUGGINGFACE_TOKEN'))}")
 print(f"Weaviate key loaded: {bool(os.getenv('WEAVIATE_API_KEY'))}")
 
 # Setting HF token
 # Access the token from the environment variable
 
-hf_token = "***REMOVED***"
+hf_token = os.getenv('HUGGINGFACE_TOKEN')
 if not hf_token:
     raise ValueError("HuggingFace token not found in environment variables")
 
@@ -74,11 +73,11 @@ def llm_model(model_name="meta-llama/Meta-Llama-3.1-8B-Instruct"):
 
 BERT_MODEL_NAME = "google-bert/bert-base-uncased"
 
-# Use a wrapper class that matches WeaviateManager's BERTEmbeddings interface
+
 from langchain_core.embeddings import Embeddings
 
 class BERTEmbeddingsWrapper(Embeddings):
-    """Wrapper to make WeaviateManager's BERTEmbeddings compatible with LangChain"""
+    """Wrapper BERT Embeddings compatible with LangChain"""
     
     def __init__(self, weaviate_bert_embeddings):
         self.bert_embeddings = weaviate_bert_embeddings
@@ -97,10 +96,12 @@ class BERTEmbeddingsWrapper(Embeddings):
             return embedding.tolist()
         return list(embedding)
 
-WEAVIATE_URL = "https://cvj2fzfgspkjalashoal8q.c0.us-west3.gcp.weaviate.cloud"
-WEAVIATE_API_KEY = "a2dNbGlrOFBsK1F1d0NNcl9ZUFFXN1ErTlM3NW1FOHo2TlhvK2hxOGNOVndQb3VuekF0R2MvL1Qrc2pzPV92MjAw"
+WEAVIATE_URL = os.getenv('WEAVIATE_URL')
+WEAVIATE_API_KEY = os.getenv('WEAVIATE_API_KEY')
 if not WEAVIATE_API_KEY:
     raise ValueError("Weaviate API key not found in environment variables")
+if not WEAVIATE_URL:
+    raise ValueError("Weaviate URL not found in environment variables")
 
 COLLECTION_NAME = "PMQA_Bert" 
 
@@ -109,7 +110,7 @@ def initialize_rag_with_bert():
     print("Initializing LLM...")
     llm = llm_model("meta-llama/Meta-Llama-3.1-8B-Instruct")
 
-    print("Connecting to Weaviate with BERT model...")
+    print("Connecting to Weaviate with BERT...")
     weaviate_manager = WeaviateManager(WEAVIATE_URL, WEAVIATE_API_KEY, hf_token, BERT_MODEL_NAME)
 
     print("Loading and processing PubMedQA dataset...")
@@ -139,7 +140,7 @@ def load_initialized_rag():
     print("Initializing LLM...")
     llm = llm_model("meta-llama/Meta-Llama-3.1-8B-Instruct")
 
-    print("Connecting to Weaviate with BERT model...")
+    print("Connecting to Weaviate with BERT...")
     weaviate_manager = WeaviateManager(WEAVIATE_URL, WEAVIATE_API_KEY, hf_token, BERT_MODEL_NAME)
     
     weaviate_manager.collection_name = COLLECTION_NAME
@@ -162,16 +163,16 @@ client = temp_manager.client
 print(f"Checking for collection: {COLLECTION_NAME}")
 
 if FORCE_REINDEX:
-    print("[FORCE] Deleting existing collection...")
+    print("Deleting existing collection...")
     client.collections.delete(COLLECTION_NAME)
     pipeline, weaviate_manager, embeddings = initialize_rag_with_bert()
 
 elif client.collections.exists(COLLECTION_NAME):
-    print("[INFO] Collection exists. Loading RAG...")
+    print("Collection exists. Loading RAG...")
     pipeline, weaviate_manager, embeddings = load_initialized_rag()
 
 else:
-    print("[INFO] Collection does not exist. Initializing RAG...")
+    print("Collection does not exist. Initializing RAG...")
     pipeline, weaviate_manager, embeddings = initialize_rag_with_bert()
 
 import torch
@@ -186,13 +187,12 @@ from testBert import run_test_generation
 
 print("\nGenerating Test Results for Evaluation...")
 
-# Generate test results using your loaded pipeline
+# Generate test results using loaded pipeline
 df, results_file = run_test_generation(
     pipeline=pipeline,
     weaviate_manager=weaviate_manager,
     embeddings=embeddings
 )
-
 
 # print(f"\nTest generation completed!")
 # print(f"Results saved to: {results_file}")

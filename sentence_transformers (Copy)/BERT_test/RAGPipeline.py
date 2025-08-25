@@ -23,7 +23,7 @@ class RAGPipeline:
         """Create the RAG pipeline with BERT embeddings."""
         
         def retriever(query: str) -> List[Document]:
-            """Retrieve documents using BERT embeddings for the query."""
+            """Retrieve documents using BERT for the query."""
             
             docs = self.weaviate_manager.search_documents(query, limit=2)
             

@@ -17,7 +17,7 @@ from transformers import AutoModel, AutoTokenizer
 # =====================
 
 class BERTEmbeddings:
-    """BERT embeddings for Weaviate integration"""
+    """BERT embeddings for Weaviate"""
     
     def __init__(self, model_name: str = "google-bert/bert-base-uncased"):
         self.model_name = model_name
@@ -26,7 +26,7 @@ class BERTEmbeddings:
         self.model.eval()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
-        print(f"BERT model loaded on {self.device}")
+        print(f"BERT loaded on {self.device}")
     
     def encode(self, texts: List[str]) -> np.ndarray:
         """Encode multiple texts to embeddings"""
@@ -57,7 +57,7 @@ class BERTEmbeddings:
         
         with torch.no_grad():
             outputs = self.model(**inputs)
-            # Use [CLS] token embedding (first token)
+            # Use [CLS] token embedding 
             embeddings = outputs.last_hidden_state[:, 0, :].cpu().numpy()
         
         return [emb for emb in embeddings]
@@ -86,7 +86,7 @@ class BERTEmbeddings:
 class WeaviateManager:
     
     def __init__(self, url: str, api_key: str, hf_token: str, bert_model_name: str = "google-bert/bert-base-uncased"):
-        """Initialize Weaviate client with BERT embeddings."""
+        """Initialize Weaviate client with BERT."""
         self.url = url
         self.api_key = api_key
         self.hf_token = hf_token
@@ -98,17 +98,16 @@ class WeaviateManager:
         # Device config
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        # Initialize BERT embeddings model
-        print("Loading BERT model for query encoding...")
+        # Initialize BERT
+        print("Loading BERT for query encoding...")
         self.bert_embeddings = BERTEmbeddings(bert_model_name)
-        print("BERT model loaded successfully!")
+        print("BERT loaded successfully!")
 
     def _connect_to_weaviate(self):
-        """Connect to Weaviate using v4 client syntax"""
+        """Connect to Weaviate"""
         
         print(f"Connecting to Weaviate at {self.url}")
         
-        # Strategy 1: Try with API Key (most reliable for Weaviate Cloud)
         try:
             print("Trying API Key authentication...")
             self.client = weaviate.connect_to_weaviate_cloud(
@@ -119,7 +118,7 @@ class WeaviateManager:
             
             # Test connection
             if self.client.is_ready():
-                print("Connected successfully with API Key authentication")
+                print("Connected successfully with API Key")
                 return
             else:
                 print("Client not ready")
@@ -134,8 +133,8 @@ class WeaviateManager:
         
 
     def reindex_with_embeddings(self, documents, embeddings_model):
-        """Reindex documents using BERT embeddings"""
-        print("Reindexing with BERT embeddings...")
+        """Reindex documents using BERT"""
+        print("Reindexing with BERT...")
         
         collection_name = "PMQA_Bert" 
         
@@ -148,7 +147,7 @@ class WeaviateManager:
         print(f"Creating collection: {collection_name}")
         self.client.collections.create(
             name=collection_name,
-            vectorizer_config=Configure.Vectorizer.none(),  # We'll provide our own vectors
+            vectorizer_config=Configure.Vectorizer.none(),  
             vector_index_config=Configure.VectorIndex.hnsw(
                 distance_metric=VectorDistances.COSINE
             ),
@@ -172,7 +171,7 @@ class WeaviateManager:
             # Extract text content
             texts = [doc.page_content for doc in batch_docs]
             
-            # Get embeddings from BERT model
+            # Get embeddings from BERT 
             embeddings = self.bert_embeddings.encode(texts)
             
             # Use batch insertion with proper format
@@ -193,14 +192,12 @@ class WeaviateManager:
             
             print(f"Processed {min(i + batch_size, len(documents))}/{len(documents)} documents")
         
-        print(f"Successfully indexed {len(documents)} documents with BERT!")
+        print(f"Successfully indexed {len(documents)} documents with BERT")
         return collection_name
 
-    # Legacy method name for compatibility
+
     def reindex_with_simcse(self, documents, model_path=None):
-        """Legacy method - now uses BERT instead of SimCSE"""
-        print("Warning: reindex_with_simcse is deprecated. Using BERT embeddings instead.")
-        return self.reindex_with_embeddings(documents, self.bert_embeddings)
+             return self.reindex_with_embeddings(documents, self.bert_embeddings)
             
     def create_schema(self):
         schema = "PMQA_Bert"
@@ -229,7 +226,7 @@ class WeaviateManager:
        
         with collection.batch.fixed_size(batch_size=100) as batch:
             for doc in documents:
-                # Generate embedding using BERT model
+                # Generate embedding using BERT 
                 vector = self.bert_embeddings.embed_query(doc.page_content)
                 
                 if hasattr(vector, 'tolist'):
@@ -254,59 +251,15 @@ class WeaviateManager:
             print("First failure:", collection.batch.failed_objects[0])                    
 
     def embed_doc(self, text: str):
-        """Embed document using BERT model"""
+        """Embed document using BERT"""
         return self.bert_embeddings.embed_query(text)
 
-    def search_documents_with_embedding(self, query_embedding: List[float], limit: int = 2) -> List[Document]:
-        """Search documents using pre-computed embedding"""
-        
-        # Ensure query_embedding is a proper Python list
-        if isinstance(query_embedding, np.ndarray):
-            query_embedding = query_embedding.tolist()
-        elif not isinstance(query_embedding, list):
-            query_embedding = list(query_embedding)
-        
-        print(f"Query embedding type: {type(query_embedding)}, length: {len(query_embedding)}")
 
-        # Retrieve from the vector DB
-        collection = self.client.collections.get("PMQA_Bert")
-    
-        results = collection.query.near_vector(
-            near_vector=query_embedding,
-            limit=limit,
-            return_metadata=MetadataQuery(score=True, distance=True),
-        )
-
-        candidates = []
-        for i, result in enumerate(results.objects):
-            properties = result.properties
-            metadata = result.metadata
-
-            print(f"\nDocument {i+1} Scores (BERT):")
-            print(f"Score: {metadata.score}")
-            print(f"Distance: {metadata.distance}")
-
-            doc = Document(
-                page_content=properties.get("content", ""),
-                metadata={
-                    "source": properties.get("source", ""),
-                    "document_id": properties.get("document_id", ""),
-                    "context_id": properties.get("context_id", ""),
-                }
-            )
-            
-            # Add retrieval scores to metadata
-            doc.metadata["score"] = metadata.score
-            doc.metadata["distance"] = metadata.distance
-            
-            candidates.append(doc)
-        
-        return candidates[:limit]
 
     def search_documents(self, query: str, limit: int = 2) -> List[Document]:
-        """Search documents using BERT embeddings for query encoding"""
+        """Search documents using BERT for query encoding"""
         
-        # Get the query embedding using BERT model
+        # Get the query embedding using BERT
         query_embedding = self.bert_embeddings.embed_query(query)
         
         # Ensure query_embedding is a proper Python list
@@ -321,10 +274,10 @@ class WeaviateManager:
         
         print(f"Query embedding type: {type(query_embedding)}, length: {len(query_embedding)}")
 
-        # Retrieve from the vector DB
+        # Retrieve from the vector database
         collection = self.client.collections.get("PMQA_Bert")
     
-        # Use hybrid search with BERT embeddings
+        # Use hybrid search with BERT
         results = collection.query.hybrid(
             query=query,
             vector=query_embedding,
@@ -338,7 +291,7 @@ class WeaviateManager:
             properties = result.properties
             metadata = result.metadata
 
-            print(f"\nDocument {i+1} Scores (BERT):")
+            print(f"\nDocument {i+1} Scores:")
             print(f"Score: {metadata.score}")
             print(f"Explain Score: {metadata.explain_score}")
             print(f"Distance: {metadata.distance}")
@@ -360,51 +313,10 @@ class WeaviateManager:
         
         return candidates[:limit]
 
-    def search_documents_vector_only(self, query: str, limit: int = 2) -> List[Document]:
-        """Search documents using only vector similarity (no hybrid) with BERT"""
-        
-        # Get the query embedding using BERT model
-        query_embedding = self.bert_embeddings.embed_query(query)
-        
-        # Ensure query_embedding is a proper Python list
-        if isinstance(query_embedding, np.ndarray):
-            query_embedding = query_embedding.tolist()
-        elif not isinstance(query_embedding, list):
-            query_embedding = list(query_embedding)
-
-        # Retrieve from the vector DB using only vector search
-        collection = self.client.collections.get("PMQA_Bert")
-    
-        results = collection.query.near_vector(
-            near_vector=query_embedding,
-            limit=limit,
-            return_metadata=MetadataQuery(score=True, distance=True),
-        )
-
-        candidates = []
-        for i, result in enumerate(results.objects):
-            properties = result.properties
-            metadata = result.metadata
-
-            doc = Document(
-                page_content=properties.get("content", ""),
-                metadata={
-                    "source": properties.get("source", ""),
-                    "document_id": properties.get("document_id", ""),
-                    "context_id": properties.get("context_id", ""),
-                }
-            )
-            
-            # Add retrieval scores to metadata
-            doc.metadata["score"] = metadata.score
-            doc.metadata["distance"] = metadata.distance
-            
-            candidates.append(doc)
-        
-        return candidates[:limit]
+   
     
     def get_embedding_stats(self):
-        """Get statistics about the embedding collection"""
+        """Get statistics"""
         collection = self.client.collections.get("PMQA_Bert")
         
         # Get collection info
@@ -412,7 +324,7 @@ class WeaviateManager:
         print(f"Collection name: {config.name}")
         print(f"Vector index config: {config.vector_index_config}")
         print(f"Properties: {[prop.name for prop in config.properties]}")
-        print(f"Embedding model: BERT ({self.bert_model_name})")
+        print(f"Embedding model: ({self.bert_model_name})")
         
         # Get some sample embeddings to check dimensions
         results = collection.query.fetch_objects(limit=1)

@@ -11,7 +11,6 @@ class PubMedQAProcessor:
     
     @staticmethod
     def load_pubmedqa_dataset():
-        """Load the PubMedQA dataset from Hugging Face."""
         print("Loading PubMedQA dataset from Hugging Face...")
         dataset = load_dataset("qiaojin/PubMedQA", "pqa_labeled")
         return dataset

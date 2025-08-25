@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Evaluate baseline BERT model on pairs for comparison with PubMedBERT
+Evaluate baseline BERT on pairs for comparison with PubMedBERT
 """
 
 import pandas as pd
@@ -15,7 +15,7 @@ import json
 
 class BERTEmbeddings:
     def __init__(self, model_name="google-bert/bert-base-uncased"):
-        """Initialize BERT model for embeddings"""
+        """Initialize BERT for embeddings"""
         print(f"Loading {model_name}...")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModel.from_pretrained(model_name)
@@ -36,20 +36,19 @@ class BERTEmbeddings:
         # Get embeddings
         with torch.no_grad():
             outputs = self.model(**inputs)
-            # Use [CLS] token embedding (first token)
+            # Use [CLS] token embedding
             embeddings = outputs.last_hidden_state[:, 0, :].cpu().numpy()
         
         return embeddings[0]  # Return 1D array
 
 def evaluate_bert_baseline(model_name="google-bert/bert-base-uncased", eval_file="data/pubmedqa_val_clean.csv"):
     """
-    Evaluate baseline BERT model on the same validation set
+    Evaluate baseline BERT on the same validation set
     """
     print("="*60)
-    print(f"BERT BASELINE EVALUATION: {model_name}")
+    print(f"BERT EVALUATION: {model_name}")
     print("="*60)
     
-    # Initialize BERT model
     embeddings_model = BERTEmbeddings(model_name)
     
     print("Loading evaluation data...")
@@ -83,7 +82,7 @@ def evaluate_bert_baseline(model_name="google-bert/bert-base-uncased", eval_file
     
     # Calculate metrics
     print("\n" + "="*50)
-    print("BERT BASELINE EVALUATION RESULTS")
+    print("BERT EVALUATION RESULTS")
     print("="*50)
     
     # Basic statistics
@@ -126,20 +125,20 @@ def evaluate_bert_baseline(model_name="google-bert/bert-base-uncased", eval_file
     correlation = np.corrcoef(similarities, labels)[0, 1]
     print(f"Pearson correlation: {correlation:.4f}")
     
-    # Create visualization - match PubMedBERT style
+    # Create visualization
     plt.figure(figsize=(12, 5))
     
-    # Plot 1: Similarity distributions - match PubMedBERT style
+    # Plot 1: Similarity distributions 
     plt.subplot(1, 2, 1)
     plt.hist(neg_similarities, bins=30, alpha=0.7, label='Irrelevant (0)', color='red')
     plt.hist(pos_similarities, bins=30, alpha=0.7, label='Relevant (1)', color='green')
     plt.xlabel('Cosine Similarity', fontsize=18)
     plt.ylabel('Frequency', fontsize=18)
-    plt.title(f'Similarity Distribution by Label', fontsize=18)
+    plt.title(f'BERT Distribution', fontsize=18)
     plt.legend(fontsize=13)
-    # Set y-axis limit to match PubMedBERT format
+    # Set y-axis limit 
     plt.ylim(0, 25)
-    # Set x-axis limit to match PubMedBERT format (0.3 to 0.9)
+    # Set x-axis limit 
     plt.xlim(0.3, 0.9)
     
     # Plot 2: Scatter plot
@@ -153,28 +152,27 @@ def evaluate_bert_baseline(model_name="google-bert/bert-base-uncased", eval_file
     
     plt.tight_layout()
     
-    # Save plot with model name
+    # Save plot
     plt.savefig(f'../plots/BERT_Embeddings_baseline_results.png', dpi=300, bbox_inches='tight')
     plt.show()
     
-    # Summary assessment
     print(f"\n" + "="*50)
-    print("SUMMARY ASSESSMENT")
+    print("Summary Assessment")
     print("="*50)
     
     if auc_score > 0.8:
-        print("EXCELLENT: shows strong semantic understanding")
+        print("Excellent: shows strong semantic understanding")
     elif auc_score > 0.7:
-        print("GOOD: captures semantic similarity well")
+        print("Good: captures semantic similarity well")
     elif auc_score > 0.6:
-        print("FAIR: some semantic understanding")
+        print("Fair: some semantic understanding")
     else:
-        print("POOR: may need more training or data")
+        print("Poor: may need more training or data")
     
     print(f"Key metrics:")
-    print(f"- ROC-AUC: {auc_score:.4f}")
-    print(f"- Best F1: {best_f1:.4f}")
-    print(f"- Relevant vs Irrelevant gap: {pos_similarities.mean() - neg_similarities.mean():.4f}")
+    print(f"ROC-AUC: {auc_score:.4f}")
+    print(f"Best F1: {best_f1:.4f}")
+    print(f"Relevant vs Irrelevant gap: {pos_similarities.mean() - neg_similarities.mean():.4f}")
     
     return {
         'model_name': model_name,
@@ -189,7 +187,7 @@ def evaluate_bert_baseline(model_name="google-bert/bert-base-uncased", eval_file
     }
 
 def save_results(results, filename):
-    """Save evaluation results to JSON file"""
+    """Save evaluation results"""
     # Convert numpy arrays and numpy scalars to Python types for JSON serialization
     results_copy = {}
     
@@ -211,7 +209,7 @@ if __name__ == "__main__":
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
     EVAL_DATA_PATH = os.path.abspath(os.path.join(CURRENT_DIR, "..", "data", "pubmedqa_val_clean.csv"))
     
-    # Test only BERT baseline for comparison with PubMedBERT
+    # Test only BE for comparison with PubMedBERT
     model_name = "google-bert/bert-base-uncased"
     
     print(f"\n{'='*60}")
@@ -221,7 +219,7 @@ if __name__ == "__main__":
     bert_results = evaluate_bert_baseline(model_name, EVAL_DATA_PATH)
     save_results(bert_results, 'bert_baseline_results.json')
     
-    print(f"\nBERT baseline evaluation complete!")
+    print(f"\nBERT evaluation complete!")
     print(f"Results saved to: ../plots/BERT_Embeddings_baseline_results.png")
-    print(f"\nTo compare with PubMedBERT, run your PubMedBERT evaluation script")
+    print(f"\nTo compare with PubMedBERT, run PubMedBERT evaluation script")
     print(f"and use the compare_models() function with both results.")

@@ -59,7 +59,7 @@ def generate_test_results(pipeline, weaviate_manager, embeddings, max_samples=50
             'meshes': item.get("MESHES", [])
         })
     
-    print(f"Processed {len(test_items)} valid items for testing")
+    print(f"Processed {len(test_items)} items for testing")
     
     # Limit the number of samples if specified
     if max_samples and max_samples < len(test_items):
@@ -68,7 +68,7 @@ def generate_test_results(pipeline, weaviate_manager, embeddings, max_samples=50
     
     results = []
     
-    print(f"Generating results for {len(test_items)} questions using BERT embeddings...")
+    print(f"Generating results for {len(test_items)} questions using BERT...")
     
     for i, item in enumerate(test_items):
         question = item['question']
@@ -81,20 +81,20 @@ def generate_test_results(pipeline, weaviate_manager, embeddings, max_samples=50
         try:
             start_time = time.time()
     
-            print(f"Searching with BERT embeddings for: {question[:50]}...")
+            print(f"Searching with BERT for: {question[:50]}...")
             
             retrieved_docs = weaviate_manager.search_documents(query=question, limit=2)
             
             context1 = retrieved_docs[0].page_content if len(retrieved_docs) > 0 else "No context retrieved"
             context2 = retrieved_docs[1].page_content if len(retrieved_docs) > 1 else "No second context"
             
-            # Log what we actually retrieved
+            # Log what was actually retrieved
             print(f"Retrieved {len(retrieved_docs)} documents")
             if retrieved_docs:
                 print(f"First doc preview: {context1[:100]}...")
             
             rag_response = pipeline.invoke(question)
-            print(f"BERT-based model response: {rag_response[:100]}")
+            print(f"BERT response: {rag_response[:100]}")
             
             elapsed_time = time.time() - start_time
             
@@ -153,25 +153,24 @@ def generate_test_results(pipeline, weaviate_manager, embeddings, max_samples=50
         results.append(result)
         
         if (i + 1) % 10 == 0:
-            print(f"Completed {i + 1} questions with BERT embeddings...")
+            print(f"Completed {i + 1} questions with BERT...")
     
     # Create DataFrame and save
     df = pd.DataFrame(results)
     df.to_csv(output_file, index=False)
     
     print(f"\nResults saved to {output_file}")
-    print(f"Generated {len(results)} test results using BERT embeddings")
+    print(f"Generated {len(results)} test results using BERT")
     print(f"Columns: {list(df.columns)}")
    
     return df
 
-# Keep all your existing analysis functions unchanged
 def quick_accuracy_check(df):
     def extract_decision(text):
         if not text or pd.isna(text):
             return 'unknown'
         text = str(text).lower().strip()
-        print(f"BERT model response: {text}")
+        print(f"BERT response: {text}")
         if 'yes' in text:
             return 'yes'
         elif 'no' in text:
@@ -187,15 +186,15 @@ def quick_accuracy_check(df):
     total = len(df)
     accuracy = correct / total if total > 0 else 0
     
-    print(f"\nQuick Accuracy Check (BERT-based):")
-    print(f"   Correct: {correct}/{total}")
-    print(f"   Accuracy: {accuracy:.3f}")
+    print(f"\nQuick Accuracy Check:")
+    print(f"Correct: {correct}/{total}")
+    print(f"Accuracy: {accuracy:.3f}")
     
     return accuracy
 
 def calculate_precision_recall_f1(df):
     """
-    Calculate precision, recall, and F1 score for each class and display in table format
+    Calculate precision, recall, and F1 score for each class
     """
     
     def extract_decision(text):
@@ -255,19 +254,16 @@ def calculate_precision_recall_f1(df):
     total = len(df)
     accuracy = correct / total if total > 0 else 0
     
-    # Display table in your requested format
     print("\n" + "="*60)
-    print("PRECISION, RECALL, AND F1 SCORE TABLE (BERT-based)")
+    print("Precision, Recall, and F1 Score")
     print("="*60)
     
     # Header
     print(f"{'Class':<10} {'Precision':<12} {'Recall':<12} {'F1 Score':<12}")
     print("-" * 48)
     
-    # Sort classes to match your example (MAYBE, NO, YES)
     class_order = ['maybe', 'no', 'yes']
     ordered_labels = [label for label in class_order if label in all_labels]
-    # Add any remaining labels not in the predefined order
     ordered_labels.extend([label for label in all_labels if label not in class_order])
     
     for label in ordered_labels:
@@ -281,9 +277,8 @@ def calculate_precision_recall_f1(df):
     print("-" * 48)
     print(f"{'Accuracy':<10} {'':<12} {'':<12} {accuracy:<12.3f}")
     
-    # Also create a styled version similar to your image
     print("\n" + "="*60)
-    print("STYLED METRICS TABLE (BERT)")
+    print("Metrics Table")
     print("="*60)
     
     for label in ordered_labels:
@@ -323,13 +318,13 @@ def detailed_confusion_analysis(df):
         df['true_label'] = df['Ground_truth'].apply(extract_decision)
     
     print("="*60)
-    print("DETAILED CONFUSION MATRIX ANALYSIS (BERT)")
+    print("Confusion Matrix")
     print("="*60)
     
     # Get unique labels
     all_labels = sorted(set(df['true_label'].tolist() + df['predicted_label'].tolist()))
     
-    # Create confusion matrix manually
+    # Create confusion matrix 
     confusion_counts = {}
     for true_label in all_labels:
         for pred_label in all_labels:
@@ -338,8 +333,8 @@ def detailed_confusion_analysis(df):
     
     # Print confusion matrix
     print("\nConfusion Matrix:")
-    print("                    PREDICTED")
-    print("                ", end="")
+    print("PREDICTED")
+    print(" ", end="")
     for pred_label in all_labels:
         print(f"{pred_label:>8}", end="")
     print()
@@ -352,7 +347,7 @@ def detailed_confusion_analysis(df):
         print()
     
     # Detailed breakdown
-    print(f"\nDetailed Error Analysis (BERT-based):")
+    print(f"\nError Analysis")
     total_questions = len(df)
     
     for true_label in all_labels:
@@ -365,8 +360,8 @@ def detailed_confusion_analysis(df):
                 else:
                     print(f"TRUE '{true_label}' PREDICTED '{pred_label}': {count} cases ({percentage:.1f}%) - ERROR")
     
-    # Calculate per-class accuracy
-    print(f"\nPer-Class Performance (BERT):")
+    # Calculate class accuracy
+    print(f"\nClass Performance")
     for true_label in all_labels:
         total_true = sum(confusion_counts[(true_label, pred)] for pred in all_labels)
         correct_true = confusion_counts[(true_label, true_label)]
@@ -375,7 +370,7 @@ def detailed_confusion_analysis(df):
             print(f"  {true_label.upper()}: {correct_true}/{total_true} correct ({accuracy:.1f}%)")
     
     # Most common errors
-    print(f"\nMost Common Errors:")
+    print(f"\nMost Common Errors")
     errors = [(true_label, pred_label, count) for (true_label, pred_label), count in confusion_counts.items() 
               if true_label != pred_label and count > 0]
     errors.sort(key=lambda x: x[2], reverse=True)
@@ -394,57 +389,56 @@ def detailed_confusion_analysis(df):
         
         for i, (_, row) in enumerate(error_cases.head(3).iterrows()):
             print(f"\nExample {i+1}:")
-            print(f"  Question: {row['question'][:80]}...")
-            print(f"  Ground Truth: {row['Ground_truth']}")
-            print(f"  BERT Model Answer: {row['Answer'][:100]}...")
-            print(f"  Context Quality Score: {row.get('retrieval_score_1', 'N/A')}")
-            print(f"  Embedding Model: {row.get('embedding_model', 'Unknown')}")
+            print(f"Question: {row['question'][:80]}...")
+            print(f"Ground Truth: {row['Ground_truth']}")
+            print(f"Model Answer: {row['Answer'][:100]}...")
+            print(f"Context Quality Score: {row.get('retrieval_score_1', 'N/A')}")
+            print(f"Embedding Model: {row.get('embedding_model', 'Unknown')}")
     
     return confusion_counts
 
-# Updated example usage function
 def run_test_generation(pipeline, weaviate_manager, embeddings, dataset_file="actual_testing_dataset.json"):
     
-    # Generate test results using your existing dataset
+    # Generate test results using dataset
     output_file = "pubmedbert_evaluation_data.csv"
     
-    print("Starting test result generation for BERT evaluation...")
+    print("Starting test result generation for BERT...")
     print(f"Using dataset: {dataset_file}")
     
     df = generate_test_results(
         pipeline=pipeline,
         weaviate_manager=weaviate_manager, 
         embeddings=embeddings,
-        max_samples=None,  # Use all samples from your dataset
+        max_samples=None,  # Use all samples 
         output_file=output_file,
-        dataset_file=dataset_file  # Pass your dataset file
+        dataset_file=dataset_file  # Pass dataset file
     )
     
     if df is None:
-        print("Failed to generate results - check dataset file path")
+        print("Failed to generate results")
         return None, None, None
     
     accuracy = quick_accuracy_check(df)
     
     metrics, overall_accuracy = calculate_precision_recall_f1(df)
     
-    # Detailed confusion analysis
+    #confusion analysis
     confusion_matrix = detailed_confusion_analysis(df)
     print(f"{confusion_matrix}")
     
     print(f"\nGenerated BERT evaluation dataset:")
-    print(f"   File: {output_file}")
-    print(f"   Questions: {len(df)}")
-    print(f"   Accuracy: {accuracy:.3f}")
-    print(f"   Embedding Model: BERT")
-    print(f"   Source Dataset: {dataset_file}")
-    print(f"   Use this file in your:")
-    print(f"   AnswerRelevancy.ipynb")
-    print(f"   ContextAdherence.ipynb") 
-    print(f"   ContextRelevancy.ipynb")
+    print(f"File: {output_file}")
+    print(f"Questions: {len(df)}")
+    print(f"Accuracy: {accuracy:.3f}")
+    print(f"Embedding Model: BERT")
+    print(f"Source Dataset: {dataset_file}")
+    # print(f"Use this file in:")
+    # print(f"AnswerRelevancy.ipynb")
+    # print(f"ContextAdherence.ipynb") 
+    # print(f"ContextRelevancy.ipynb")
     
     return df, output_file, metrics
 
 if __name__ == "__main__":
-    print("Import this script and call run_test_generation() with BERT pipeline objects")
+    print("Import this script and call run_test_generation() with pipeline objects")
     print("Usage: run_test_generation(pipeline, weaviate_manager, embeddings, dataset_file='actual_testing_dataset.json')")
