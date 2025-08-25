@@ -7,7 +7,7 @@ import os
 from typing import List, Dict
 from collections import defaultdict
 
-def generate_test_results(pipeline, weaviate_manager, embeddings, max_samples=50, output_file="pubmedbert_test_results.csv", dataset_file="actual_testing_dataset.json"):
+def generate_test_results(pipeline, weaviate_manager, embeddings, max_samples=50, output_file="pubmedbert_test_results.csv", dataset_file="../data/actual_testing_dataset.json"):
     
     # Check if the dataset file exists
     if not os.path.exists(dataset_file):
@@ -397,10 +397,10 @@ def detailed_confusion_analysis(df):
     
     return confusion_counts
 
-def run_test_generation(pipeline, weaviate_manager, embeddings, dataset_file="actual_testing_dataset.json"):
+def run_test_generation(pipeline, weaviate_manager, embeddings, dataset_file="../data/actual_testing_dataset.json"):
     
     # Generate test results using dataset
-    output_file = "pubmedbert_evaluation_data.csv"
+    output_file = "../data/pubmedbert_evaluation_data.csv"
     
     print("Starting test result generation for BERT...")
     print(f"Using dataset: {dataset_file}")
@@ -441,4 +441,4 @@ def run_test_generation(pipeline, weaviate_manager, embeddings, dataset_file="ac
 
 if __name__ == "__main__":
     print("Import this script and call run_test_generation() with pipeline objects")
-    print("Usage: run_test_generation(pipeline, weaviate_manager, embeddings, dataset_file='actual_testing_dataset.json')")
+    print("Usage: run_test_generation(pipeline, weaviate_manager, embeddings, dataset_file='../data/actual_testing_dataset.json')")
