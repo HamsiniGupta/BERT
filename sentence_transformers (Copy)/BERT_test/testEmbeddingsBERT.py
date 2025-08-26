@@ -41,9 +41,9 @@ class BERTEmbeddings:
         
         return embeddings[0]  # Return 1D array
 
-def evaluate_bert_baseline(model_name="google-bert/bert-base-uncased", eval_file="data/pubmedqa_val_clean.csv"):
+def evaluate_bert_baseline(model_name="google-bert/bert-base-uncased", eval_file="data/pubmedqa_test_clean.csv"):
     """
-    Evaluate baseline BERT on the same validation set
+    Evaluate baseline BERT on the same test set
     """
     print("="*60)
     print(f"BERT EVALUATION: {model_name}")
@@ -207,9 +207,9 @@ if __name__ == "__main__":
     import os
     
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-    EVAL_DATA_PATH = os.path.abspath(os.path.join(CURRENT_DIR, "..", "data", "pubmedqa_val_clean.csv"))
+    EVAL_DATA_PATH = os.path.abspath(os.path.join(CURRENT_DIR, "..", "data", "pubmedqa_test_clean.csv"))
     
-    # Test only BE for comparison with PubMedBERT
+    # Test only BERT for comparison with PubMedBERT
     model_name = "google-bert/bert-base-uncased"
     
     print(f"\n{'='*60}")
@@ -217,7 +217,7 @@ if __name__ == "__main__":
     print(f"{'='*60}")
     
     bert_results = evaluate_bert_baseline(model_name, EVAL_DATA_PATH)
-    save_results(bert_results, 'bert_baseline_results.json')
+    save_results(bert_results, '../data/bert_baseline_results.json')
     
     print(f"\nBERT evaluation complete!")
     print(f"Results saved to: ../plots/BERT_Embeddings_baseline_results.png")

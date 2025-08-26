@@ -202,7 +202,7 @@ def evaluate_raw_bert_baseline(eval_file):
         'f1_at_06': bert_f1_06
     }
 
-def create_raw_bert_confusion_matrix(similarities, labels, threshold, save_path="raw_bert_confusion_matrix.png"):
+def create_raw_bert_confusion_matrix(similarities, labels, threshold, save_path="../plots/raw_bert_confusion_matrix.png"):
     """Create confusion matrix for BERT"""
     
     # Create predictions
@@ -256,15 +256,12 @@ if __name__ == "__main__":
     
     import os
 
-    # Create plots directory if it doesn't exist
-    os.makedirs('plots', exist_ok=True)
-
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-    EVAL_DATA_PATH = os.path.abspath(os.path.join(CURRENT_DIR, "..", "data", "pubmedqa_val_clean.csv"))
+    EVAL_DATA_PATH = os.path.abspath(os.path.join(CURRENT_DIR, "..", "data", "pubmedqa_test_clean.csv"))
 
     print("Evaluating BERT...")
     
     results = evaluate_raw_bert_baseline(EVAL_DATA_PATH)
     
     print("\nEvaluation complete!")
-    print("Check raw_bert_confusion_matrix.png for BERT.")
+    print("Check plots/raw_bert_confusion_matrix.png for BERT.")
