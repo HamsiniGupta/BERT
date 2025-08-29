@@ -22,6 +22,9 @@ cd BERT_Files/BERT_test
 python testBERT.py
 # Run PubMedRAG files and compare results with BERT
 python compareAllEmbeddings.py
+
+<img width="792" height="397" alt="image" src="https://github.com/user-attachments/assets/9c7a05cd-4c15-4136-a39a-6d7a07ae4b38" />
+
 ```
 
 ## Acknowledgements
