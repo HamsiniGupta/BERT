@@ -23,7 +23,8 @@ python testBERT.py
 # Run PubMedRAG files and compare results with BERT
 python compareAllEmbeddings.py
 ```
-<img width="792" height="397" alt="image" src="https://github.com/user-attachments/assets/9c7a05cd-4c15-4136-a39a-6d7a07ae4b38" />
+The following table shows the results for different retrievers in the RAG pipeline evaluated on both LLMs.
+<img width="767" height="385" alt="image" src="https://github.com/user-attachments/assets/8d0ad4ad-dc5f-44f3-9699-8678f5203c20" />
 
 
 ## Acknowledgements
